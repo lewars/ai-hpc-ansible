@@ -1,0 +1,207 @@
+---
+version: '3'
+
+vars:
+  PYTHON: python3
+  VENV_PATH: .venv
+
+tasks:
+  install-pip:
+    desc: Install python3-pip RPM package if not present
+    aliases: [pip]
+    cmds:
+      - rpm -q python3-pip || sudo dnf install -y python3-pip
+
+  create-venv:
+    desc: Create a virtual environment called .venv
+    aliases: [venv]
+    deps: [install-pip]
+    status:
+      - test -d {{.VENV_PATH}}
+    cmds:
+      - "{{.PYTHON}} -m venv {{.VENV_PATH}}"
+
+  install-deps:
+    desc: Activate venv, upgrade pip, and install dependencies
+    aliases: [deps]
+    deps: [create-venv]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && \
+        pip install --upgrade pip && \
+        test -f requirements.txt && \
+        pip install -r requirements.txt
+
+  lint:
+    desc: Lint all Ansible code
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-lint playbooks/ roles/
+
+  lint:nvidia:
+    desc: Lint only the nvidia role
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-lint roles/nvidia
+
+  lint:pyxis:
+    desc: Lint only the pyxis role
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-lint roles/pyxis
+
+  lint:enroot:
+    desc: Lint only the enroot role
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-lint roles/enroot
+
+  validate:
+    desc: Validate Ansible playbooks
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml --syntax-check
+
+  test:nvidia:destroy:
+    desc: Destroy nvidia molecule test instances
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate &&
+        cd roles/nvidia &&
+        molecule destroy
+
+  test:pyxis:destroy:
+    desc: Destroy pyxis molecule test instances
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate &&
+        cd roles/pyxis &&
+        molecule destroy
+
+  test:enroot:destroy:
+    desc: Destroy enroot molecule test instances
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate &&
+        cd roles/enroot &&
+        molecule destroy
+
+  test:nvidia:
+    desc: Run molecule tests for nvidia role
+    deps: [test:nvidia:destroy]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && cd roles/nvidia && molecule test
+
+  test:pyxis:
+    desc: Run molecule tests for pyxis role
+    deps: [test:pyxis:destroy]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && cd roles/pyxis && molecule test
+
+  test:enroot:
+    desc: Run molecule tests for enroot role
+    deps: [test:enroot:destroy]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && cd roles/enroot && molecule test
+
+  test:nvidia:verify:
+    desc: Run molecule tests for nvidia up to verify stage
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && \
+        cd roles/nvidia && \
+        molecule create && \
+        molecule converge && \
+        molecule verify
+
+  test:pyxis:verify:
+    desc: Run molecule tests for pyxis up to verify stage
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && \
+        cd roles/pyxis && \
+        molecule create && \
+        molecule converge && \
+        molecule verify
+
+  test:enroot:verify:
+    desc: Run molecule tests for enroot up to verify stage
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && \
+        cd roles/enroot && \
+        molecule create && \
+        molecule converge && \
+        molecule verify
+
+  test:all:destroy:
+    desc: Destroy all molecule test instances for all roles
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate
+        for role in roles/*/; do
+          if [ -d "${role}molecule" ]; then
+            cd $role
+            molecule destroy
+            for scenario in molecule/*/; do
+              if [ -d "$scenario" ] && [ "$(basename $scenario)" != "default" ]; then
+                molecule destroy -s $(basename $scenario)
+              fi
+            done
+            cd -
+          fi
+        done
+
+  test:all:
+    desc: Test all roles using molecule
+    aliases: [test]
+    deps: [test:all:destroy]
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate
+        errors=0
+        for role in roles/*/; do
+          if [ -d "${role}molecule" ]; then
+            cd $role
+            molecule test || errors=$((errors+1))
+            cd -
+          fi
+        done
+        test $errors -eq 0
+
+  deploy:lab:
+    desc: Deploy the Ansible configuration to the lab environment
+    aliases: [deploy]
+    deps: [install-deps, validate]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l lab
+
+  deploy:dev:
+    desc: Deploy the Ansible configuration to the dev environment
+    aliases: [dev]
+    deps: [install-deps, validate]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l dev
+
+  deploy:prod:
+    desc: Deploy the Ansible configuration to the prod environment
+    aliases: [prod]
+    deps: [install-deps, validate]
+    cmds:
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l prod
+
+  clean:
+    desc: Clean up generated files and environments
+    cmds:
+      - |
+        if [ -d "{{.VENV_PATH}}" ]; then
+          . {{.VENV_PATH}}/bin/activate
+          for role in roles/*/; do
+            if [ -d "${role}molecule" ]; then
+              cd $role
+              molecule destroy
+              for scenario in molecule/*/; do
+                if [ -d "$scenario" ] && [ "$(basename $scenario)" != "default" ]; then
+                  molecule destroy -s $(basename $scenario)
+                fi
+              done
+              cd -
+            fi
+          done
+        fi
+        rm -rf {{.VENV_PATH}}
+        find . -type d -name "__pycache__" -exec rm -rf {} +
+        find . -name "*.pyc" -delete
+        find . -name ".molecule" -type d -exec rm -rf {} +
+
