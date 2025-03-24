@@ -166,21 +166,21 @@ tasks:
     aliases: [deploy]
     deps: [install-deps, validate]
     cmds:
-      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l lab
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/ai-hpc-setup.yml -i inventory/hosts.yml -l lab
 
   deploy:dev:
     desc: Deploy the Ansible configuration to the dev environment
     aliases: [dev]
     deps: [install-deps, validate]
     cmds:
-      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l dev
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/ai-hpc-setup.yml -i inventory/hosts.yml -l dev
 
   deploy:prod:
     desc: Deploy the Ansible configuration to the prod environment
     aliases: [prod]
     deps: [install-deps, validate]
     cmds:
-      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l prod
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/ai-hpc-setup.yml -i inventory/hosts.yml -l prod
 
   default:
         desc: Run the default task
