@@ -26,9 +26,10 @@ tasks:
     aliases: [deps]
     deps: [create-venv]
     cmds:
-      - . {{.VENV_PATH}}/bin/activate && \
-        pip install --upgrade pip && \
-        test -f requirements.txt && \
+      - |
+        . {{.VENV_PATH}}/bin/activate
+        pip install --upgrade pip
+        test -f requirements.txt
         pip install -r requirements.txt
 
   lint:
@@ -180,6 +181,10 @@ tasks:
     deps: [install-deps, validate]
     cmds:
       - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml -i inventory/hosts.yml -l prod
+
+  default:
+        desc: Run the default task
+        aliases: [all]
 
   clean:
     desc: Clean up generated files and environments
