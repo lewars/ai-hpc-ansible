@@ -1,6 +1,9 @@
 ---
+dependency:
+  name: galaxy
+  enabled: false
 driver:
-  name: delegated
+  name: default
 platforms:
   - name: test-vm
     instance_name: nvidia-test-${MOLECULE_SCENARIO_NAME:-default}
@@ -34,9 +37,9 @@ scenario:
   name: default
   test_sequence:
     - dependency
-    - lint
     - cleanup
     - destroy
+    - syntax
     - create
     - prepare
     - converge

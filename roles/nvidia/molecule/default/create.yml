@@ -3,9 +3,7 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  no_log: "{{ molecule_no_log | default(true) }}"
   vars:
-    molecule_yml: "{{ lookup('file', molecule_file) | from_yaml }}"
     ssh_user: molecule
     ssh_port: 22
     ssh_key_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
@@ -15,8 +13,19 @@
     image_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}.qcow2"
     cloud_init_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}-cloud-init.iso"
     qemu_pid_file: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}.pid"
+    molecule_instance_config: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
 
   tasks:
+    - name: Print Platform Information
+      debug:
+        msg:
+          - "Platform Name: {{ molecule_yml.platforms[0].name }}"
+          - "Instance Name: {{ molecule_yml.platforms[0].instance_name }}"
+          - "Memory: {{ molecule_yml.platforms[0].memory }}"
+          - "CPUs: {{ molecule_yml.platforms[0].cpus }}"
+          - "Ansible User: {{ molecule_yml.platforms[0].ansible_user }}"
+          - "Private Key: {{ molecule_yml.platforms[0].ansible_private_key_file }}"
+
     - name: Set platform specific variables
       set_fact:
         instance_name: "{{ molecule_yml.platforms[0].instance_name }}"
@@ -48,13 +57,13 @@
 
     - name: Create instance disk from base image
       command: >
-        qemu-img create -f qcow2
+        qemu-img create -f qcow2 -F qcow2
         -b {{ base_image_local_path }}
         {{ image_path }} 20G
       when: not instance_disk.stat.exists
 
     - name: Generate SSH key if it doesn't exist
-      openssh_keypair:
+      community.crypto.openssh_keypair:
         path: "{{ ssh_key_path }}"
         type: rsa
         size: 4096
@@ -94,17 +103,16 @@
         -cpu host
         -smp {{ molecule_yml.platforms[0].cpus | default(2) }}
         -m {{ molecule_yml.platforms[0].memory | default(2048) }}
-        -drive file={{ image_path }},if=virtio,format=qcow2,discard=unmap
-        -drive file={{ cloud_init_path }},if=virtio,media=cdrom
+        -drive file={{ image_path }},format=qcow2
+        -drive file={{ cloud_init_path }},format=raw
         -netdev user,id=net0,hostfwd=tcp::2222-:22
         -device virtio-net-pci,netdev=net0
-        -device virtio-rng-pci
-        -nographic
+        -display none
         -daemonize
         -pidfile {{ qemu_pid_file }}
       register: qemu_start_result
 
-    - name: Get VM PID
+    - name: Get VM pid
       command: "cat {{ qemu_pid_file }}"
       register: vm_pid
       changed_when: false
@@ -120,11 +128,12 @@
     - name: Add VM IP to inventory
       add_host:
         name: "{{ molecule_yml.platforms[0].name }}"
-        ansible_host: 127.0.0.1
+        ansible_host: "127.0.0.1"
         ansible_port: "{{ vm_ssh_port }}"
         ansible_user: "{{ ssh_user }}"
         ansible_private_key_file: "{{ ssh_key_path }}"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+        groups: all
 
     - name: Wait for SSH to become available
       wait_for:

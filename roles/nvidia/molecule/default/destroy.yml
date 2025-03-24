@@ -3,12 +3,19 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  no_log: "{{ molecule_no_log | default(true) }}"
   vars:
-    molecule_yml: "{{ lookup('file', molecule_file) | from_yaml }}"
-    molecule_instance_config_path: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
+    molecule_instance_config: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
 
   tasks:
+    - name: Print Platform Information
+      debug:
+        msg:
+          - "Platform Name: {{ molecule_yml.platforms[0].name }}"
+          - "Instance Name: {{ molecule_yml.platforms[0].instance_name }}"
+          - "Memory: {{ molecule_yml.platforms[0].memory }}"
+          - "CPUs: {{ molecule_yml.platforms[0].cpus }}"
+          - "Ansible User: {{ molecule_yml.platforms[0].ansible_user }}"
+          - "Private Key: {{ molecule_yml.platforms[0].ansible_private_key_file }}"
     - name: Set platform specific variables
       set_fact:
         instance_name: "{{ molecule_yml.platforms[0].instance_name }}"
@@ -17,8 +24,8 @@
 
     - name: Load instance config
       set_fact:
-        instance_config: "{{ lookup('file', molecule_instance_config_path) | from_yaml }}"
-      when: molecule_instance_config_path is defined and molecule_instance_config_path != ''
+        instance_config: "{{ lookup('file', molecule_instance_config) | from_yaml }}"
+      when: molecule_instance_config is defined and molecule_instance_config != ''
       ignore_errors: true
 
     - name: Get PID file path
@@ -60,7 +67,7 @@
 
     - name: Cleanup instance config
       file:
-        path: "{{ molecule_instance_config_path }}"
+        path: "{{ molecule_instance_config }}"
         state: absent
-      when: molecule_instance_config_path is defined and molecule_instance_config_path != ''
+      when: molecule_instance_config is defined and molecule_instance_config != ''
       ignore_errors: true

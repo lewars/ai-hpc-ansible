@@ -4,6 +4,16 @@
   become: true
   gather_facts: true
   tasks:
+    - name: Print Platform Information
+      debug:
+        msg:
+          - "Platform Name: {{ molecule_yml.platforms[0].name }}"
+          - "Instance Name: {{ molecule_yml.platforms[0].instance_name }}"
+          - "Memory: {{ molecule_yml.platforms[0].memory }}"
+          - "CPUs: {{ molecule_yml.platforms[0].cpus }}"
+          - "Ansible User: {{ molecule_yml.platforms[0].ansible_user }}"
+          - "Private Key: {{ molecule_yml.platforms[0].ansible_private_key_file }}"
+
     - name: Install prerequisites for RedHat systems
       package:
         name:
