@@ -1,0 +1,155 @@
+---
+- name: Create VM instances for molecule tests
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ molecule_no_log | default(true) }}"
+  vars:
+    molecule_yml: "{{ lookup('file', molecule_file) | from_yaml }}"
+    ssh_user: molecule
+    ssh_port: 22
+    ssh_key_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
+    base_image_download: true
+    base_image_local_path: "{{ lookup('env', 'HOME') }}/.local/share/molecule/base_images/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"
+    base_image_url: "https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"
+    image_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}.qcow2"
+    cloud_init_path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}-cloud-init.iso"
+    qemu_pid_file: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/{{ instance_name }}.pid"
+
+  tasks:
+    - name: Set platform specific variables
+      set_fact:
+        instance_name: "{{ molecule_yml.platforms[0].instance_name }}"
+
+    - name: Create base images directory
+      file:
+        path: "{{ lookup('env', 'HOME') }}/.local/share/molecule/base_images"
+        state: directory
+        mode: "0755"
+      when: base_image_download
+
+    - name: Download base image
+      get_url:
+        url: "{{ base_image_url }}"
+        dest: "{{ base_image_local_path }}"
+        mode: "0644"
+      when: base_image_download
+
+    - name: Create working directories for molecule
+      file:
+        path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check for existing molecule instance disk
+      stat:
+        path: "{{ image_path }}"
+      register: instance_disk
+
+    - name: Create instance disk from base image
+      command: >
+        qemu-img create -f qcow2
+        -b {{ base_image_local_path }}
+        {{ image_path }} 20G
+      when: not instance_disk.stat.exists
+
+    - name: Generate SSH key if it doesn't exist
+      openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        type: rsa
+        size: 4096
+      register: ssh_key
+
+    - name: Create temporary directory for cloud-init files
+      tempfile:
+        state: directory
+        prefix: "molecule-{{ instance_name }}-"
+      register: temp_dir
+      delegate_to: localhost
+
+    - name: Prepare cloud-init user-data file
+      copy:
+        dest: "{{ temp_dir.path }}/user-data"
+        content: |
+          #cloud-config
+          hostname: test-host
+          users:
+            - name: {{ ssh_user }}
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              groups: sudo
+              shell: /bin/bash
+              ssh_authorized_keys:
+                - {{ lookup('file', ssh_key_path + '.pub') }}
+
+    - name: Generate cloud-init ISO
+      command: >
+        cloud-localds {{ cloud_init_path }}
+        {{ temp_dir.path }}/user-data
+
+    - name: Start the VM instance using qemu-system-x86_64
+      shell: >
+        qemu-system-x86_64
+        -name {{ instance_name }}
+        -machine type=q35,accel=kvm:tcg
+        -cpu host
+        -smp {{ molecule_yml.platforms[0].cpus | default(2) }}
+        -m {{ molecule_yml.platforms[0].memory | default(2048) }}
+        -drive file={{ image_path }},if=virtio,format=qcow2,discard=unmap
+        -drive file={{ cloud_init_path }},if=virtio,media=cdrom
+        -netdev user,id=net0,hostfwd=tcp::2222-:22
+        -device virtio-net-pci,netdev=net0
+        -device virtio-rng-pci
+        -nographic
+        -daemonize
+        -pidfile {{ qemu_pid_file }}
+      register: qemu_start_result
+
+    - name: Get VM PID
+      command: "cat {{ qemu_pid_file }}"
+      register: vm_pid
+      changed_when: false
+
+    - name: Wait 5 seconds for VM to initialize
+      pause:
+        seconds: 5
+
+    - name: Set VM SSH port fact
+      set_fact:
+        vm_ssh_port: 2222
+
+    - name: Add VM IP to inventory
+      add_host:
+        name: "{{ molecule_yml.platforms[0].name }}"
+        ansible_host: 127.0.0.1
+        ansible_port: "{{ vm_ssh_port }}"
+        ansible_user: "{{ ssh_user }}"
+        ansible_private_key_file: "{{ ssh_key_path }}"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+    - name: Wait for SSH to become available
+      wait_for:
+        host: 127.0.0.1
+        port: "{{ vm_ssh_port }}"
+        delay: 5
+        timeout: 300
+      register: ssh_ready
+
+    - name: Dump instance config
+      copy:
+        content: |
+          # Molecule managed
+          instance_config:
+            - instance: "{{ molecule_yml.platforms[0].name }}"
+              address: "127.0.0.1"
+              user: "{{ ssh_user }}"
+              port: "{{ vm_ssh_port }}"
+              identity_file: "{{ ssh_key_path }}"
+          molecule_host_config:
+            instance: "{{ molecule_yml.platforms[0].name }}"
+            address: "127.0.0.1"
+            user: "{{ ssh_user }}"
+            port: "{{ vm_ssh_port }}"
+            identity_file: "{{ ssh_key_path }}"
+            pid_file: "{{ qemu_pid_file }}"
+        dest: "{{ molecule_instance_config }}"
+        mode: 0600

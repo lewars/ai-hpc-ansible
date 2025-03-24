@@ -1,0 +1,87 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install prerequisites for RedHat systems
+      package:
+        name:
+          - rpm-build
+          - createrepo
+          - tar
+          - wget
+          - curl
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install prerequisites for Debian systems
+      apt:
+        name:
+          - apt-utils
+          - gpg
+          - wget
+          - curl
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    # Create a mock kernel module to simulate NVIDIA driver installation
+    - name: Create directory structure for mock NVIDIA driver
+      file:
+        path: "/usr/lib/modules/{{ ansible_kernel }}/extra/nvidia"
+        state: directory
+        mode: '0755'
+
+    - name: Create mock NVIDIA kernel module
+      copy:
+        dest: "/usr/lib/modules/{{ ansible_kernel }}/extra/nvidia/nvidia.ko"
+        content: "// Mock NVIDIA kernel module for testing"
+        mode: '0644'
+
+    - name: Create mock NVIDIA utilities
+      file:
+        path: "/usr/bin/{{ item }}"
+        state: touch
+        mode: '0755'
+      with_items:
+        - nvidia-smi
+        - nvidia-settings
+        - nvidia-persistenced
+        - nvidia-fabricmanager
+      changed_when: false
+
+    - name: Create mock CUDA directories
+      file:
+        path: "/usr/local/cuda-12.8"
+        state: directory
+        mode: '0755'
+
+    - name: Create mock CUDA binaries
+      file:
+        path: "/usr/local/cuda-12.8/bin/{{ item }}"
+        state: touch
+        mode: '0755'
+      with_items:
+        - nvcc
+        - cuda-gdb
+        - cuda-memcheck
+      changed_when: false
+
+    - name: Create symbolic link for CUDA
+      file:
+        src: "/usr/local/cuda-12.8"
+        dest: "/usr/local/cuda"
+        state: link
+
+    - name: Update system prior to testing
+      package:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat" and false
+
+    - name: Update system prior to testing (Ubuntu)
+      apt:
+        upgrade: full
+        update_cache: true
+      when: ansible_os_family == "Debian"
