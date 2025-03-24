@@ -146,18 +146,23 @@
     - name: Dump instance config
       copy:
         content: |
+          ---
           # Molecule managed
-          instance_config:
-            - instance: "{{ molecule_yml.platforms[0].name }}"
-              address: "127.0.0.1"
-              user: "{{ ssh_user }}"
-              port: "{{ vm_ssh_port }}"
-              identity_file: "{{ ssh_key_path }}"
-          molecule_host_config:
-            instance: "{{ molecule_yml.platforms[0].name }}"
+
+          # instance_config:
+          - instance: "{{ molecule_yml.platforms[0].instance_name }}"
             address: "127.0.0.1"
             user: "{{ ssh_user }}"
             port: "{{ vm_ssh_port }}"
+            shell_type: sh
+            identity_file: "{{ ssh_key_path }}"
+
+          # molecule_host_config:
+          - instance: "{{ molecule_yml.platforms[0].instance_name }}"
+            address: "127.0.0.1"
+            user: "{{ ssh_user }}"
+            port: "{{ vm_ssh_port }}"
+            shell_type: sh
             identity_file: "{{ ssh_key_path }}"
             pid_file: "{{ qemu_pid_file }}"
         dest: "{{ molecule_instance_config }}"

@@ -4,6 +4,8 @@ dependency:
   enabled: false
 driver:
   name: default
+  options:
+    managed: false
 platforms:
   - name: test-vm
     instance_name: nvidia-test-${MOLECULE_SCENARIO_NAME:-default}
@@ -14,8 +16,9 @@ platforms:
     connection: ssh
     ansible_connection: ssh
     ansible_user: molecule
+    ansible_host: 127.0.0.1
+    ansible_port: 2222
     ansible_private_key_file: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
-    managed: false
 provisioner:
   name: ansible
   config_options:
@@ -24,6 +27,8 @@ provisioner:
   inventory:
     host_vars:
       test-vm:
+        ansible_host: 127.0.0.1
+        ansible_port: 2222
         ansible_user: molecule
         ansible_private_key_file: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
         ansible_become: true
