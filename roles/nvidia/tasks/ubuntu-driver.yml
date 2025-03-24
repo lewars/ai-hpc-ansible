@@ -1,0 +1,85 @@
+---
+- name: Download NVIDIA driver repo DEB
+  get_url:
+    url: "{{ nvidia_local_repo_remote_url | default(default_nvidia_driver_ubuntu_url) }}"
+    dest: "{{ nvidia_tmp_dir }}/{{ nvidia_ubuntu_repo_file }}"
+    mode: '0644'
+  when:
+    - nvidia_download_rpms
+    - not nvidia_local_repo_deb
+  tags:
+    - nvidia
+    - download
+
+- name: Install NVIDIA driver repo from local DEB
+  apt:
+    deb: "{{ nvidia_local_repo_deb | default(nvidia_tmp_dir + '/' + nvidia_ubuntu_repo_file) }}"
+    state: present
+  tags:
+    - nvidia
+    - install
+
+- name: Import NVIDIA GPG key
+  apt_key:
+    file: "/var/nvidia-driver-local-repo-ubuntu{{ nvidia_ubuntu_repo_name }}-{{ nvidia_driver_version }}/nvidia-driver-local-keyring.gpg"
+    state: present
+  tags:
+    - nvidia
+    - install
+
+- name: Update APT package lists
+  apt:
+    update_cache: yes
+  tags:
+    - nvidia
+    - install
+
+- name: Install NVIDIA driver
+  apt:
+    name: "{{ nvidia_driver_package }}"
+    state: present
+  tags:
+    - nvidia
+    - install
+
+- name: Install NVIDIA persistence daemon
+  apt:
+    name: "{{ nvidia_persistenced_package }}"
+    state: present
+  when: nvidia_install_persistenced
+  tags:
+    - nvidia
+    - install
+
+- name: Enable and start NVIDIA persistence daemon
+  service:
+    name: nvidia-persistenced
+    state: started
+    enabled: yes
+  when:
+    - nvidia_install_persistenced
+    - nvidia_install_persistenced_enabled
+  tags:
+    - nvidia
+    - service
+
+- name: Install NVIDIA fabric manager
+  apt:
+    name: "{{ nvidia_fabricmanager_package }}"
+    state: present
+  when: nvidia_install_fabricmanager
+  tags:
+    - nvidia
+    - install
+
+- name: Enable and start NVIDIA fabric manager
+  service:
+    name: nvidia-fabricmanager
+    state: started
+    enabled: yes
+  when:
+    - nvidia_install_fabricmanager
+    - nvidia_fabricmanager_enabled
+  tags:
+    - nvidia
+    - service

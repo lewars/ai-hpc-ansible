@@ -1,0 +1,27 @@
+---
+galaxy_info:
+  author: Alistair Y. Lewars
+  description: Role to install NVIDIA drivers and CUDA Toolkit
+  company: redacted
+
+  license: MIT
+
+  min_ansible_version: "2.12"
+
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+    - name: Ubuntu
+      versions:
+        - "jammy"  # For Ubuntu 22.04
+        - "noble"  # For Ubuntu 24.10
+
+  galaxy_tags:
+    - nvidia
+    - cuda
+    - driver
+    - gpu
+    - hpc
+
+dependencies: []

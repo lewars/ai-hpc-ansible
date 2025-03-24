@@ -1,0 +1,61 @@
+---
+- name: Include distribution-specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}.yml"
+    - "{{ ansible_os_family | lower }}.yml"
+    - "default.yml"
+  tags:
+    - always
+
+- name: Create temporary install directory
+  ansible.builtin.file:
+    path: "{{ nvidia_tmp_dir }}"
+    state: directory
+    mode: '0755'
+  tags:
+    - nvidia
+    - cuda
+
+- name: Include NVIDIA driver installation tasks for RHEL
+  ansible.builtin.include_tasks: redhat-driver.yml
+  when: ansible_os_family == "RedHat"
+  tags:
+    - nvidia
+
+- name: Include NVIDIA driver installation tasks for Ubuntu
+  ansible.builtin.include_tasks: ubuntu-driver.yml
+  when: ansible_os_family == "Debian"
+  tags:
+    - nvidia
+
+- name: Include CUDA Toolkit installation tasks for RHEL
+  ansible.builtin.include_tasks: redhat-cuda.yml
+  when:
+    - ansible_os_family == "RedHat"
+    - nvidia_install_cuda_toolkit
+    - not nvidia_install_cuda-driver_only
+  tags:
+    - cuda
+
+- name: Include CUDA Toolkit installation tasks for Ubuntu
+  ansible.builtin.include_tasks: ubuntu-cuda.yml
+  when:
+    - ansible_os_family == "Debian"
+    - nvidia_install_cuda_toolkit
+    - not nvidia_install_cuda-driver_only
+  tags:
+    - cuda
+
+- name: Reboot system if required
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible after NVIDIA driver installation"
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: whoami
+  when: nvidia_restart_after_install
+  tags:
+    - nvidia
+    - reboot

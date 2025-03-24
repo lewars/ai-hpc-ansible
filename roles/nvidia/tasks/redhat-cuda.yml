@@ -1,0 +1,45 @@
+---
+- name: Download CUDA Toolkit repo RPM
+  ansible.builtin.get_url:
+    url: "{{ default_nvidia_cuda_rhel_url }}"
+    dest: "{{ nvidia_tmp_dir }}/{{ nvidia_cuda_rhel_repo_file }}"
+    mode: '0644'
+  when:
+    - nvidia_download_rpms
+    - not nvidia_local_repo_cuda_rpm
+  tags:
+    - cuda
+    - download
+
+- name: Install CUDA Toolkit repo from local RPM
+  ansible.builtin.dnf:
+    name: "{{ nvidia_local_repo_cuda_rpm | default(nvidia_tmp_dir + '/' + nvidia_cuda_rhel_repo_file) }}"
+  tags:
+    - cuda
+    - install
+
+- name: Clean DNF cache
+  ansible.builtin.command: "dnf clean all"
+  args:
+    warn: false
+  tags:
+    - cuda
+    - install
+
+- name: Install CUDA Toolkit
+  ansible.builtin.dnf:
+    name: "{{ nvidia_cuda_toolkit_package }}"
+    state: present
+  environment:
+    CUDA_INSTALLATION_PATH: "{{ nvidia_cuda_install_path | default(omit) }}"
+  tags:
+    - cuda
+    - install
+
+- name: Install NVIDIA GDS
+  ansible.builtin.dnf:
+    name: "{{ nvidia_gds_package }}"
+    state: present
+  tags:
+    - cuda
+    - install

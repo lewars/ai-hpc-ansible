@@ -1,0 +1,63 @@
+---
+- name: Download CUDA pin file
+  get_url:
+    url: "{{ default_nvidia_cuda_ubuntu_pin_url }}"
+    dest: "/etc/apt/preferences.d/cuda-repository-pin-600"
+    mode: '0644'
+  when: nvidia_download_rpms
+  tags:
+    - cuda
+    - download
+
+- name: Download CUDA Toolkit repo DEB
+  get_url:
+    url: "{{ default_nvidia_cuda_ubuntu_url }}"
+    dest: "{{ nvidia_tmp_dir }}/{{ nvidia_cuda_ubuntu_repo_file }}"
+    mode: '0644'
+  when:
+    - nvidia_download_rpms
+    - not nvidia_local_repo_cuda_deb
+  tags:
+    - cuda
+    - download
+
+- name: Install CUDA Toolkit repo from local DEB
+  apt:
+    deb: "{{ nvidia_local_repo_cuda_deb | default(nvidia_tmp_dir + '/' + nvidia_cuda_ubuntu_repo_file) }}"
+    state: present
+  tags:
+    - cuda
+    - install
+
+- name: Copy CUDA keyring
+  shell: cp /var/cuda-repo-ubuntu{{ nvidia_ubuntu_repo_name }}-{{ nvidia_cuda_version }}-local/cuda-*-keyring.gpg /usr/share/keyrings/
+  args:
+    warn: false
+  tags:
+    - cuda
+    - install
+
+- name: Update APT package lists
+  apt:
+    update_cache: yes
+  tags:
+    - cuda
+    - install
+
+- name: Install CUDA Toolkit
+  apt:
+    name: "{{ nvidia_cuda_toolkit_package }}"
+    state: present
+  environment:
+    CUDA_INSTALLATION_PATH: "{{ nvidia_cuda_install_path | default(omit) }}"
+  tags:
+    - cuda
+    - install
+
+- name: Install NVIDIA GDS
+  apt:
+    name: "{{ nvidia_gds_package }}"
+    state: present
+  tags:
+    - cuda
+    - install
