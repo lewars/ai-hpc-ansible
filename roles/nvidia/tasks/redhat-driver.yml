@@ -1,0 +1,79 @@
+---
+- name: Download NVIDIA driver repo RPM
+  get_url:
+    url: "{{ nvidia_local_repo_remote_url | default(default_nvidia_driver_rhel_url) }}"
+    dest: "{{ nvidia_tmp_dir }}/{{ nvidia_rhel_repo_file }}"
+    mode: '0644'
+  when:
+    - nvidia_download_rpms
+    - not nvidia_local_repo_rpm
+  tags:
+    - nvidia
+    - download
+
+- name: Install NVIDIA driver repo from local RPM
+  dnf:
+    name: "{{ nvidia_local_repo_rpm | default(nvidia_tmp_dir + '/' + nvidia_rhel_repo_file) }}"
+    state: present
+  tags:
+    - nvidia
+    - install
+
+- name: Import NVIDIA GPG key
+  rpm_key:
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
+    state: present
+  tags:
+    - nvidia
+    - install
+
+- name: Install NVIDIA driver
+  dnf:
+    name: "{{ nvidia_driver_package }}"
+    state: present
+    disable_gpg_check: yes
+  tags:
+    - nvidia
+    - install
+
+- name: Install NVIDIA persistence daemon
+  dnf:
+    name: "{{ nvidia_persistenced_package }}"
+    state: present
+  when: nvidia_install_persistenced
+  tags:
+    - nvidia
+    - install
+
+- name: Enable and start NVIDIA persistence daemon
+  service:
+    name: nvidia-persistenced
+    state: started
+    enabled: yes
+  when:
+    - nvidia_install_persistenced
+    - nvidia_install_persistenced_enabled
+  tags:
+    - nvidia
+    - service
+
+- name: Install NVIDIA fabric manager
+  dnf:
+    name: "{{ nvidia_fabricmanager_package }}"
+    state: present
+  when: nvidia_install_fabricmanager
+  tags:
+    - nvidia
+    - install
+
+- name: Enable and start NVIDIA fabric manager
+  service:
+    name: nvidia-fabricmanager
+    state: started
+    enabled: yes
+  when:
+    - nvidia_install_fabricmanager
+    - nvidia_fabricmanager_enabled
+  tags:
+    - nvidia
+    - service

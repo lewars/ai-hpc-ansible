@@ -1,0 +1,25 @@
+---
+nvidia_install_cuda_toolkit: true
+nvidia_install_cuda_driver_only: false
+nvidia_install_persistenced: true
+nvidia_install_persistenced_enabled: true
+nvidia_install_fabricmanager: true
+nvidia_fabricmanager_enabled: true
+nvidia_restart_after_install: true
+nvidia_install_from_local_repo: false
+nvidia_download_rpms: true
+
+# Package versions and architecture
+nvidia_driver_version: "570.124.06"
+nvidia_cuda_version: "12.8.1"
+nvidia_architecture: "x86_64"
+nvidia_ubuntu_repo_name: "2404"
+
+nvidia_local_repo_rpm: ""
+nvidia_local_repo_deb: ""
+nvidia_local_repo_cuda_rpm: ""
+nvidia_local_repo_cuda_deb: ""
+
+nvidia_local_repo_remote_url: ""
+
+nvidia_cuda_install_path: ""

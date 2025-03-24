@@ -1,0 +1,3 @@
+---
+# RedHat-specific variables
+nvidia_driver_package: "kmod-nvidia-latest-dkms"

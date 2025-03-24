@@ -1,0 +1,24 @@
+---
+nvidia_driver_package: "nvidia-driver"
+nvidia_persistenced_package: "nvidia-persistenced"
+nvidia_fabricmanager_package: "nvidia-fabricmanager"
+
+nvidia_cuda_toolkit_package: "cuda-toolkit-{{ nvidia_cuda_version }}"
+nvidia_gds_package: "nvidia-gds"
+
+# Repository packages
+nvidia_rhel_repo_file: "nvidia-driver-local-repo-rhel9-{{ nvidia_driver_version }}-1.0-1.{{ nvidia_architecture }}.rpm"
+nvidia_ubuntu_repo_file: "nvidia-driver-local-repo-ubuntu{{ nvidia_ubuntu_repo_name }}-{{ nvidia_driver_version }}-1.0-1_{{ nvidia_architecture }}.deb"
+
+nvidia_cuda_rhel_repo_file: "cuda-repo-rhel9-{{ nvidia_cuda_version }}-local-{{ nvidia_cuda_version }}_{{ nvidia_driver_version }}-1.{{ nvidia_architecture }}.rpm"
+nvidia_cuda_ubuntu_repo_file: "cuda-repo-ubuntu{{ nvidia_ubuntu_repo_name }}-{{ nvidia_cuda_version }}-local_{{ nvidia_cuda_version }}-{{ nvidia_driver_version }}-1_{{ nvidia_architecture }}.deb"
+
+# Package download URLs
+default_nvidia_driver_rhel_url: "https://us.download.nvidia.com/tesla/{{ nvidia_driver_version }}/{{ nvidia_rhel_repo_file }}"
+default_nvidia_driver_ubuntu_url: "https://us.download.nvidia.com/tesla/{{ nvidia_driver_version }}/{{ nvidia_ubuntu_repo_file }}"
+
+default_nvidia_cuda_rhel_url: "https://developer.download.nvidia.com/compute/cuda/{{ nvidia_cuda_version }}/local_installers/{{ nvidia_cuda_rhel_repo_file }}"
+default_nvidia_cuda_ubuntu_url: "https://developer.download.nvidia.com/compute/cuda/{{ nvidia_cuda_version }}/local_installers/{{ nvidia_cuda_ubuntu_repo_file }}"
+default_nvidia_cuda_ubuntu_pin_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu{{ nvidia_ubuntu_repo_name }}/{{ nvidia_architecture }}/cuda-ubuntu{{ nvidia_ubuntu_repo_name }}.pin"
+
+nvidia_tmp_dir: "/tmp/nvidia-install"

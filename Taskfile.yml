@@ -55,7 +55,7 @@ tasks:
   validate:
     desc: Validate Ansible playbooks
     cmds:
-      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/nvidia-setup.yml --syntax-check
+      - . {{.VENV_PATH}}/bin/activate && ansible-playbook playbooks/ai-hpc-setup.yml --syntax-check
 
   test:nvidia:destroy:
     desc: Destroy nvidia molecule test instances
