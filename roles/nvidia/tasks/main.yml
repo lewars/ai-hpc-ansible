@@ -2,9 +2,12 @@
 - name: Include distribution-specific variables
   ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
+    - "../vars/{{ ansible_distribution | lower }}.yml"
+    - "../vars/{{ ansible_os_family | lower }}.yml"
+    - "../vars/main.yml"
     - "{{ ansible_distribution | lower }}.yml"
     - "{{ ansible_os_family | lower }}.yml"
-    - "default.yml"
+    - "main.yml"
   tags:
     - always
 

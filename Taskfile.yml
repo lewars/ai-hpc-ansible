@@ -31,6 +31,7 @@ tasks:
         pip install --upgrade pip
         test -f requirements.txt
         pip install -r requirements.txt
+        ansible-galaxy collection install community.crypto
 
   lint:
     desc: Lint all Ansible code
@@ -64,6 +65,15 @@ tasks:
         . {{.VENV_PATH}}/bin/activate &&
         cd roles/nvidia &&
         molecule destroy
+
+  test:nvidia:reset:
+    desc: Reset nvidia molecule test instances
+    cmds:
+      - |
+        . {{.VENV_PATH}}/bin/activate &&
+        cd roles/nvidia &&
+        molecule reset
+
 
   test:pyxis:destroy:
     desc: Destroy pyxis molecule test instances

@@ -1,0 +1,33 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    nvidia_install_cuda_toolkit: true
+    nvidia_install_persistenced: true
+    nvidia_install_persistenced_enabled: true
+    nvidia_install_fabricmanager: true
+    nvidia_fabricmanager_enabled: true
+    nvidia_restart_after_install: true
+    nvidia_install_from_local_repo: true
+    nvidia_download_rpms: true
+
+  tasks:
+    - name: Set molecule project directory
+      set_fact:
+        role_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+
+    - name: Show debug info
+      debug:
+        msg: "Using role path: {{ role_dir }}"
+
+    - name: Include default variables
+      include_vars:
+        file: "{{ role_dir }}/defaults/main.yml"
+
+    # - name: Include variables
+    #   include_vars:
+    #     file: "{{ role_dir }}/vars/main.yml"
+
+    - name: Include NVIDIA role
+      import_tasks: "../../tasks/main.yml"

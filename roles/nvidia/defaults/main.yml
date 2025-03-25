@@ -15,11 +15,11 @@ nvidia_cuda_version: "12.8.1"
 nvidia_architecture: "x86_64"
 nvidia_ubuntu_repo_name: "2404"
 
-nvidia_local_repo_rpm: ""
-nvidia_local_repo_deb: ""
-nvidia_local_repo_cuda_rpm: ""
-nvidia_local_repo_cuda_deb: ""
+nvidia_local_repo_rpm: null
+nvidia_local_repo_deb: null
+nvidia_local_repo_cuda_rpm: null
+nvidia_local_repo_cuda_deb: null
 
-nvidia_local_repo_remote_url: ""
+nvidia_local_repo_remote_url: null
 
-nvidia_cuda_install_path: ""
+nvidia_cuda_install_path: null

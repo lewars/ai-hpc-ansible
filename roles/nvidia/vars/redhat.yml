@@ -1,3 +1,41 @@
 ---
+nvidia_install_cuda_toolkit: true
+nvidia_install_cuda_driver_only: false
+nvidia_install_persistenced: true
+nvidia_install_persistenced_enabled: true
+nvidia_install_fabricmanager: true
+nvidia_fabricmanager_enabled: true
+nvidia_restart_after_install: true
+nvidia_install_from_local_repo: false
+nvidia_download_rpms: true
+
+# Package versions and architecture
+nvidia_driver_version: "570.124.06"
+nvidia_cuda_version: "12.8.1"
+nvidia_architecture: "x86_64"
+nvidia_ubuntu_repo_name: "2404"
+
 # RedHat-specific variables
-nvidia_driver_package: "kmod-nvidia-latest-dkms"
+nvidia_driver_package: "nvidia-driver"
+nvidia_persistenced_package: "nvidia-persistenced"
+nvidia_fabricmanager_package: "nvidia-fabricmanager"
+
+nvidia_cuda_toolkit_package: "cuda-toolkit-{{ nvidia_cuda_version }}"
+nvidia_gds_package: "nvidia-gds"
+
+# Repository packages
+nvidia_rhel_repo_file: "nvidia-driver-local-repo-rhel9-{{ nvidia_driver_version }}-1.0-1.{{ nvidia_architecture }}.rpm"
+
+
+nvidia_cuda_rhel_repo_file: "cuda-repo-rhel9-{{ nvidia_cuda_version }}-local-{{ nvidia_cuda_version }}_{{ nvidia_driver_version }}-1.{{ nvidia_architecture }}.rpm"
+
+# Package download URLs
+default_nvidia_driver_rhel_url: "https://us.download.nvidia.com/tesla/{{ nvidia_driver_version }}/{{ nvidia_rhel_repo_file }}"
+
+default_nvidia_cuda_rhel_url: "https://developer.download.nvidia.com/compute/cuda/{{ nvidia_cuda_version }}/local_installers/{{ nvidia_cuda_rhel_repo_file }}"
+
+nvidia_tmp_dir: "/opt/packages"
+nvidia_local_repo_remote_url: "{{ default_nvidia_driver_rhel_url }}"
+nvidia_cuda_install_path: "/usr/local/cuda-{{ nvidia_cuda_version }}"
+nvidia_local_repo_rpm: "{{ nvidia_tmp_dir }}/{{ nvidia_rhel_repo_file }} "
+nvidia_local_repo_cuda_rpm: "{{ nvidia_tmp_dir }}/{{ nvidia_cuda_rhel_repo_file }}"
