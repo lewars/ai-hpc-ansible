@@ -1,4 +1,31 @@
 ---
+- name: Print variable information
+  debug:
+    msg:
+      - "nvidia_download_rpms: {{ nvidia_download_rpms }}"
+      - "nvidia_local_repo_rpm: {{ nvidia_local_repo_rpm }}"
+      - "nvidia_local_repo_remote_url: {{ nvidia_local_repo_remote_url }}"
+      - "nvidia_rhel_repo_file: {{ nvidia_rhel_repo_file }}"
+      - "nvidia_tmp_dir: {{ nvidia_tmp_dir }}"
+      - "nvidia_driver_package: {{ nvidia_driver_package }}"
+      - "nvidia_persistenced_package: {{ nvidia_persistenced_package }}"
+      - "nvidia_install_persistenced: {{ nvidia_install_persistenced }}"
+      - "nvidia_install_persistenced_enabled: {{ nvidia_install_persistenced_enabled }}"
+      - "nvidia_fabricmanager_package: {{ nvidia_fabricmanager_package }}"
+      - "nvidia_install_fabricmanager: {{ nvidia_install_fabricmanager }}"
+      - "nvidia_fabricmanager_enabled: {{ nvidia_fabricmanager_enabled }}"
+
+- name: Create RPM download directory
+  ansible.builtin.file:
+    path: "{{ nvidia_tmp_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - nvidia_download_rpms
+  tags:
+    - nvidia
+    - download
+
 - name: Download NVIDIA driver repo RPM
   get_url:
     url: "{{ nvidia_local_repo_remote_url | default(default_nvidia_driver_rhel_url) }}"
@@ -6,7 +33,6 @@
     mode: '0644'
   when:
     - nvidia_download_rpms
-    - not nvidia_local_repo_rpm
   tags:
     - nvidia
     - download
@@ -15,6 +41,7 @@
   dnf:
     name: "{{ nvidia_local_repo_rpm | default(nvidia_tmp_dir + '/' + nvidia_rhel_repo_file) }}"
     state: present
+    disable_gpg_check: yes
   tags:
     - nvidia
     - install
@@ -23,6 +50,7 @@
   rpm_key:
     key: /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA
     state: present
+  when: false
   tags:
     - nvidia
     - install

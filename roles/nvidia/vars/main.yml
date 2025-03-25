@@ -21,4 +21,4 @@ default_nvidia_cuda_rhel_url: "https://developer.download.nvidia.com/compute/cud
 default_nvidia_cuda_ubuntu_url: "https://developer.download.nvidia.com/compute/cuda/{{ nvidia_cuda_version }}/local_installers/{{ nvidia_cuda_ubuntu_repo_file }}"
 default_nvidia_cuda_ubuntu_pin_url: "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu{{ nvidia_ubuntu_repo_name }}/{{ nvidia_architecture }}/cuda-ubuntu{{ nvidia_ubuntu_repo_name }}.pin"
 
-nvidia_tmp_dir: "/tmp/nvidia-install"
+nvidia_tmp_dir: "/opt/packages"

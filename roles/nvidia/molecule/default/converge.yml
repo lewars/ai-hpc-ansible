@@ -3,27 +3,31 @@
   hosts: all
   become: true
   vars:
-    # Set testing variables here
     nvidia_install_cuda_toolkit: true
     nvidia_install_persistenced: true
     nvidia_install_persistenced_enabled: true
     nvidia_install_fabricmanager: true
     nvidia_fabricmanager_enabled: true
     nvidia_restart_after_install: true
-    # Use mock RPMs for testing to avoid large downloads
     nvidia_install_from_local_repo: true
-    nvidia_download_rpms: false
-    nvidia_local_repo_rpm: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-nvidia-driver.rpm"
-    nvidia_local_repo_cuda_rpm: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-cuda-toolkit.rpm"
+    nvidia_download_rpms: true
 
   tasks:
+    - name: Set molecule project directory
+      set_fact:
+        role_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+
+    - name: Show debug info
+      debug:
+        msg: "Using role path: {{ role_dir }}"
+
+    - name: Include default variables
+      include_vars:
+        file: "{{ role_dir }}/defaults/main.yml"
+
+    # - name: Include variables
+    #   include_vars:
+    #     file: "{{ role_dir }}/vars/main.yml"
+
     - name: Include NVIDIA role
-      include_role:
-        name: nvidia
-      vars:
-        # Override any role variables for testing
-        nvidia_driver_version: "570.124.06"
-        nvidia_cuda_version: "12.8.1"
-        # Mock commands for testing
-        nvidia_command_rpm_install: "echo 'Mock RPM install'"
-        nvidia_command_deb_install: "echo 'Mock DEB install'"
+      import_tasks: "../../tasks/main.yml"
