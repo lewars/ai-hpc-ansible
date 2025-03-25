@@ -16,53 +16,7 @@
     nvidia_local_repo_rpm: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-nvidia-driver.rpm"
     nvidia_local_repo_cuda_rpm: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-cuda-toolkit.rpm"
 
-  pre_tasks:
-    - name: Update package cache (Ubuntu)
-      apt:
-        update_cache: true
-        cache_valid_time: 3600
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Install required packages for tests
-      package:
-        name:
-          - kernel-devel
-          - kernel-headers
-          - gcc
-          - make
-        state: present
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Install required packages for tests (Ubuntu)
-      apt:
-        name:
-          - linux-headers-generic
-          - build-essential
-        state: present
-      when: ansible_facts['os_family'] == "Debian"
-
   tasks:
-    - name: Create directories for mock RPMs
-      file:
-        path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files"
-        state: directory
-        mode: '0755'
-      delegate_to: localhost
-
-    - name: Create mock NVIDIA driver RPM for testing
-      copy:
-        dest: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-nvidia-driver.rpm"
-        content: "mock package"
-        mode: '0644'
-      delegate_to: localhost
-
-    - name: Create mock CUDA Toolkit RPM for testing
-      copy:
-        dest: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-cuda-toolkit.rpm"
-        content: "mock package"
-        mode: '0644'
-      delegate_to: localhost
-
     - name: Include NVIDIA role
       include_role:
         name: nvidia

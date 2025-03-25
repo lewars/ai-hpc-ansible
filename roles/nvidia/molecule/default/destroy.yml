@@ -5,6 +5,7 @@
   gather_facts: false
   vars:
     molecule_instance_config: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
+    qemu_pid_file: "{{ lookup('env', 'XDG_RUNTIME_DIR') }}/{{ molecule_yml.platforms[0].instance_name }}.pid"
 
   tasks:
     - name: Print Platform Information
@@ -16,6 +17,8 @@
           - "CPUs: {{ molecule_yml.platforms[0].cpus }}"
           - "Ansible User: {{ molecule_yml.platforms[0].ansible_user }}"
           - "Private Key: {{ molecule_yml.platforms[0].ansible_private_key_file }}"
+          - "QEMU PID File: {{ qemu_pid_file }}"
+
     - name: Set platform specific variables
       set_fact:
         instance_name: "{{ molecule_yml.platforms[0].instance_name }}"
@@ -30,7 +33,7 @@
 
     - name: Get PID file path
       set_fact:
-        qemu_pid_file: "{{ instance_config.molecule_host_config.pid_file | default('') }}"
+        qemu_pid_file: "{{ qemu_pid_file }}"
       when: instance_config is defined
       ignore_errors: true
 
@@ -54,7 +57,7 @@
       ignore_errors: true
       changed_when: true
 
-    - name: Remove instance disk image
+    - name: Remove instance disk image and other artifacts
       file:
         path: "{{ item }}"
         state: absent

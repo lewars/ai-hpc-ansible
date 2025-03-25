@@ -17,10 +17,6 @@
     - name: Install prerequisites for RedHat systems
       package:
         name:
-          - rpm-build
-          - createrepo
-          - tar
-          - wget
           - curl
         state: present
       when: ansible_os_family == "RedHat"
@@ -36,12 +32,29 @@
         update_cache: true
       when: ansible_os_family == "Debian"
 
-    # Create a mock kernel module to simulate NVIDIA driver installation
+    - name: Create directories for mock RPMs
+      file:
+        path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files"
+        state: directory
+        mode: '0755'
+
     - name: Create directory structure for mock NVIDIA driver
       file:
         path: "/usr/lib/modules/{{ ansible_kernel }}/extra/nvidia"
         state: directory
         mode: '0755'
+
+    - name: Create mock NVIDIA driver RPM for testing
+      copy:
+        dest: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-nvidia-driver.rpm"
+        content: "mock package"
+        mode: '0644'
+
+    - name: Create mock CUDA Toolkit RPM for testing
+      copy:
+        dest: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/files/mock-cuda-toolkit.rpm"
+        content: "mock package"
+        mode: '0644'
 
     - name: Create mock NVIDIA kernel module
       copy:
@@ -63,9 +76,12 @@
 
     - name: Create mock CUDA directories
       file:
-        path: "/usr/local/cuda-12.8"
+        path: "/usr/local/{{ item }}"
         state: directory
         mode: '0755'
+      with_items:
+        - cuda-12.8
+        - cuda-12.8/bin
 
     - name: Create mock CUDA binaries
       file:
